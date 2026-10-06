@@ -1,0 +1,48 @@
+# Настройки сервера для хостинга Beget (Apache). Владелец 2026-10-06: домен subbotina-perm.ru.
+# На GitHub Pages (предпросмотр) этот файл не действует.
+
+Options -Indexes
+DirectoryIndex index.html
+ErrorDocument 404 /404.html
+AddDefaultCharset utf-8
+
+# Только HTTPS и адрес без www
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteRule ^ https://subbotina-perm.ru%{REQUEST_URI} [L,R=301]
+  RewriteCond %{HTTP_HOST} ^www\. [NC]
+  RewriteRule ^ https://subbotina-perm.ru%{REQUEST_URI} [L,R=301]
+  # Служебные файлы не отдавать
+  RewriteRule (^|/)\.(?!well-known/) - [F]
+</IfModule>
+
+# Безопасность: только свои скрипты, внешнее — лишь карта Яндекса; сайт нельзя встроить в чужую страницу
+<IfModule mod_headers.c>
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src https://yandex.ru; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+  Header always set X-Frame-Options "DENY"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+  Header always set Strict-Transport-Security "max-age=31536000" "expr=%{HTTPS} == 'on'"
+
+  # Кэш: файлы сборки с хешем в имени и шрифты — на год, страницы — всегда свежие
+  <FilesMatch "\.(js|css|woff2|avif|webp|jpg|jpeg|png|svg|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "^(og-image\.jpg|logo\.png|logo-mark\.png|favicon\.ico|icon-.*\.png|apple-touch-icon\.png)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+  <FilesMatch "\.(html|xml|txt|webmanifest)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/javascript text/javascript application/json application/xml application/manifest+json image/svg+xml
+</IfModule>
+
+AddType application/manifest+json .webmanifest
+AddType font/woff2 .woff2
+AddType image/avif .avif
